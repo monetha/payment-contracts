@@ -1,0 +1,27 @@
+{
+  "name": "monetha-paymnet-contracts",
+  "version": "1.0.0",
+  "description": "TBD",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monetha/payment-contracts.git"
+  },
+  "keywords": [
+    "solidity",
+    "smart-contracts"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/monetha/payment-contracts/issues"
+  },
+  "homepage": "https://github.com/monetha/payment-contracts#readme",
+  "dependencies": {
+    "monetha-loyalty-contracts": "git+https://github.com/monetha/loyalty-contracts.git",
+    "monetha-utility-contracts": "git+https://github.com/monetha/utility-contracts.git"
+  }
+}
