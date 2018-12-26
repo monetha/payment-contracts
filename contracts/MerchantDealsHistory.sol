@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import "openzeppelin-solidity/contracts/ownership/Contactable.sol";
-import "monetha-utility-contracts/Restricted.sol";
+import "monetha-utility-contracts/contracts/Restricted.sol";
 
 
 /**

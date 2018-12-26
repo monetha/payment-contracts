@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "openzeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "openzeppelin-solidity/contracts/ownership/Contactable.sol";
-import "monetha-utility-contracts/Restricted.sol";
+import "monetha-utility-contracts/contracts/Restricted.sol";
 import "./MonethaGateway.sol";
 import "./MerchantWallet.sol";
 import "./GenericERC20.sol";
