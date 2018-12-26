@@ -2,8 +2,8 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "openzeppelin-solidity/contracts/ownership/Contactable.sol";
-import "monetha-utility-contracts/Restricted.sol";
-import "monetha-utility-contracts/SafeDestructible.sol";
+import "monetha-utility-contracts/contracts/Restricted.sol";
+import "monetha-utility-contracts/contracts/SafeDestructible.sol";
 import "./GenericERC20.sol";
 
 

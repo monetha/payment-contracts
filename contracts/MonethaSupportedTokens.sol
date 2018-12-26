@@ -1,7 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./Restricted.sol";
-
+import "monetha-utility-contracts/contracts/Restricted.sol";
 
 /**
  *  @title MonethaSupportedTokens
