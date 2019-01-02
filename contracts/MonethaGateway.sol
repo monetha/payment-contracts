@@ -78,6 +78,12 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
      *  @param _merchantWallet address of merchant's wallet for fund transfer
      *  @param _monethaFee is a fee collected by Monetha
      */
+    /**
+     *  acceptPayment accept payment from PaymentAcceptor, forwards it to merchant's wallet
+     *      and collects Monetha fee.
+     *  @param _merchantWallet address of merchant's wallet for fund transfer
+     *  @param _monethaFee is a fee collected by Monetha
+     */
     function acceptPayment(address _merchantWallet,
         uint _monethaFee,
         address _customerAddress,
@@ -90,8 +96,8 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
         require(_monethaFee >= 0 && _monethaFee <= FEE_PERMILLE.mul(price).div(1000));
 
         discountWei = 0;
-        if (monethaVoucher != address(0) && _vouchersApply > 0) {
-            if (MaxDiscountPermille > 0) {
+        if (monethaVoucher != address(0)) {
+            if (_vouchersApply > 0 && MaxDiscountPermille > 0) {
                 uint maxDiscountWei = price.mul(MaxDiscountPermille).div(PERMILLE_COEFFICIENT);
                 uint maxVouchers = monethaVoucher.fromWei(maxDiscountWei);
                 // limit vouchers to apply
