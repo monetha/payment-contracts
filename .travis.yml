@@ -26,3 +26,14 @@ after_success:
   - for file in contracts/*.sol; do f=$(basename -- ${file%.*}); cp "build/contracts/${f}.abi" artifacts/; cp "build/contracts/${f}.bin" artifacts/; done
   - 'echo "Compiler: $(./node_modules/.bin/solcjs --version)" > artifacts/README.md'
   - 'echo "Contracts commit: ${CI_COMMIT_SHA}" >> artifacts/README.md'
+  - pushd artifacts; zip -r payment-contracts.zip .; popd
+  - 'echo "Artifacts download URL: https://${ARTIFACTS_BUCKET}.s3.amazonaws.com/${TRAVIS_REPO_SLUG}/${TRAVIS_COMMIT}/payment-contracts.zip"'
+
+addons:
+  artifacts:
+    s3_region: "eu-west-1"
+    working_dir: artifacts
+    paths:
+      - reputation-contracts.zip
+    target_paths:
+      - /$TRAVIS_REPO_SLUG/$TRAVIS_COMMIT
