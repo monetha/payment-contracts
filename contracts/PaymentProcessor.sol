@@ -166,6 +166,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
     {
         Order storage order = orders[_orderId];
 
+        require(order.tokenAddress == address(0));
         require(msg.sender == order.paymentAcceptor);
         require(msg.value == order.price);
     }
@@ -277,6 +278,8 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
     atState(_orderId, State.Refunding) transition(_orderId, State.Refunded)
     {
         Order storage order = orders[_orderId];
+        require(order.tokenAddress == address(0));
+
         order.originAddress.transfer(order.price.sub(order.discount));
     }
 

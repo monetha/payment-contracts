@@ -1,5 +1,5 @@
+import Revert from "./helpers/VMExceptionRevert";
 const {BigNumber} = require('./helpers/setup');
-
 const PaymentProcessor = artifacts.require("PaymentProcessor")
 const MerchantDealsHistory = artifacts.require("MerchantDealsHistory")
 const MonethaGateway = artifacts.require("MonethaGateway")
@@ -35,6 +35,7 @@ contract('PaymentProcessor', function (accounts) {
     const FEE = 15
     const ORDER_ID = 123
     const ORDER_ID2 = 456
+    const ORDER_ID3 = 789
     const MONETHA_VOUCHER_CONTRACT = "0x0000000000000000000000000000000000000000" // TODO: replace with mock or actual contract
     const VOUCHERS_APPLY = 0
 
@@ -102,6 +103,10 @@ contract('PaymentProcessor', function (accounts) {
         const order = await processor.orders(ORDER_ID)
     })
 
+    it('should not allow to withdraw ether if paid via tokens', async () => {
+        await processor.withdrawRefund(ORDER_ID, { from: UNKNOWN }).should.be.rejectedWith(Revert);
+    })
+
     it('should withdraw token refund correctly', async () => {
         var clientBalance1 = await token.balanceOf(ORIGIN)
         clientBalance1.toNumber()
@@ -132,6 +137,13 @@ contract('PaymentProcessor', function (accounts) {
         new BigNumber(order[1]).should.bignumber.equal(PRICE)
         order[3].should.equal(ACCEPTOR)
         order[4].should.equal(ORIGIN)
+    })
+
+    it('should not accept secure payment if token address is present', async () => {
+        await processor.addOrder(ORDER_ID3, PRICE, ACCEPTOR, ORIGIN, FEE, token.address, VOUCHERS_APPLY, { from: PROCESSOR })
+
+        const order = await processor.orders(ORDER_ID3)
+        await processor.securePay(ORDER_ID3, { from: ACCEPTOR, value: PRICE }).should.be.rejectedWith(Revert);
     })
 
     it('should accept secure payment correctly', async () => {
@@ -166,6 +178,10 @@ contract('PaymentProcessor', function (accounts) {
         await checkState(processor, ORDER_ID2, State.Refunding)
 
         const order = await processor.orders(ORDER_ID2)
+    })
+
+    it('should not allow to withdraw tokens if paid via ether', async () => {
+        await processor.withdrawTokenRefund(ORDER_ID2, { from: UNKNOWN }).should.be.rejectedWith(Revert);
     })
 
     it('should withdraw refund correctly', async () => {

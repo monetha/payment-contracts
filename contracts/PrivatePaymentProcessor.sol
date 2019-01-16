@@ -75,6 +75,7 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         WithdrawState state;
         uint amount;
         address clientAddress;
+        address tokenAddress;
     }
 
     mapping(uint => Withdraw) public withdrawals;
@@ -205,7 +206,8 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         withdrawals[_orderId] = Withdraw({
             state : WithdrawState.Pending,
             amount : msg.value,
-            clientAddress : _clientAddress
+            clientAddress : _clientAddress,
+            tokenAddress: address(0)
             });
 
         // log refunding
@@ -243,7 +245,8 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         withdrawals[_orderId] = Withdraw({
             state : WithdrawState.Pending,
             amount : _orderValue,
-            clientAddress : _clientAddress
+            clientAddress : _clientAddress,
+            tokenAddress : _tokenAddress
             });
 
         // log refunding
@@ -259,6 +262,7 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
     {
         Withdraw storage withdraw = withdrawals[_orderId];
         require(WithdrawState.Pending == withdraw.state);
+        require(withdraw.tokenAddress == address(0));
 
         address clientAddress = withdraw.clientAddress;
         uint amount = withdraw.amount;
@@ -285,6 +289,7 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
 
         Withdraw storage withdraw = withdrawals[_orderId];
         require(WithdrawState.Pending == withdraw.state);
+        require(withdraw.tokenAddress == _tokenAddress);
 
         address clientAddress = withdraw.clientAddress;
         uint amount = withdraw.amount;
