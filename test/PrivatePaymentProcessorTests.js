@@ -1,5 +1,5 @@
+import Revert from "./helpers/VMExceptionRevert";
 const {BigNumber} = require('./helpers/setup');
-
 const PrivatePaymentProcessor = artifacts.require("PrivatePaymentProcessor")
 const MonethaGateway = artifacts.require("MonethaGateway")
 const MerchantWallet = artifacts.require("MerchantWallet")
@@ -22,7 +22,7 @@ contract('PrivatePaymentProcessor', function (accounts) {
     const FEE = 15
     const ORDER_ID = 123
     const ORDER_ID2 = 456
-
+    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
     const MONETHA_VOUCHER_CONTRACT = "0x0000000000000000000000000000000000000000" // TODO: replace with mock or actual contract
     const VOUCHERS_APPLY = 0
 
@@ -73,6 +73,10 @@ contract('PrivatePaymentProcessor', function (accounts) {
         new BigNumber(withdrawal[0]).should.bignumber.equal(1) // Withdraw State Pending.
         new BigNumber(withdrawal[1]).should.bignumber.equal(PRICE) // Withdraw amount.
         withdrawal[2].should.equal(ORIGIN) // Withdraw clientAddress.
+    })
+
+    it('should not allow to withdraw ether if paid via tokens', async () => {
+        await processor.withdrawRefund(ORDER_ID, { from: UNKNOWN }).should.be.rejectedWith(Revert);
     })
 
     it('should withdraw token refund correctly', async () => {
@@ -155,6 +159,10 @@ contract('PrivatePaymentProcessor', function (accounts) {
         withdrawal[2].should.equal(ORIGIN) // Withdraw clientAddress.
     })
 
+    it('should not allow to withdraw tokens if paid via ether', async () => {
+        await processor.withdrawTokenRefund(ORDER_ID2, ZERO_ADDRESS, { from: UNKNOWN }).should.be.rejectedWith(Revert);
+    })
+
     it('should withdraw refund correctly', async () => {
         const clientBalance1 = new BigNumber(web3.eth.getBalance(ORIGIN))
         const processorBalance1 = new BigNumber(web3.eth.getBalance(processor.address))
@@ -178,7 +186,7 @@ contract('PrivatePaymentProcessor', function (accounts) {
         await processor.setMonethaGateway(oldGateWayAddress, { from: OWNER })
     })
 
-    it('should not allo to withdraw refund two times', async () => {
+    it('should not allow to withdraw refund two times', async () => {
         await processor.withdrawRefund(ORDER_ID2, { from: UNKNOWN }).should.be.rejected
     })
 
