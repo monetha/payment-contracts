@@ -3,6 +3,7 @@ const {BigNumber} = require('./helpers/setup');
 const PrivatePaymentProcessor = artifacts.require("PrivatePaymentProcessor")
 const MonethaGateway = artifacts.require("MonethaGateway")
 const MerchantWallet = artifacts.require("MerchantWallet")
+const MonethaSupportedTokens = artifacts.require("MonethaSupportedTokens");
 const Token = artifacts.require("ERC20Mintable")
 
 contract('PrivatePaymentProcessor', function (accounts) {
@@ -26,7 +27,7 @@ contract('PrivatePaymentProcessor', function (accounts) {
     const MONETHA_VOUCHER_CONTRACT = "0x0000000000000000000000000000000000000000" // TODO: replace with mock or actual contract
     const VOUCHERS_APPLY = 0
 
-    let processor, gateway, wallet, token
+    let processor, gateway, wallet, token, supportedToken
 
     before(async () => {
         gateway = await MonethaGateway.new(VAULT, PROCESSOR, MONETHA_VOUCHER_CONTRACT)
@@ -36,7 +37,11 @@ contract('PrivatePaymentProcessor', function (accounts) {
 
         wallet = await MerchantWallet.new(MERCHANT, merchantId, FUND_ADDRESS)
 
+        supportedToken = await MonethaSupportedTokens.new()
+        await supportedToken.setMonethaAddress(PROCESSOR, true)
+
         processor = await PrivatePaymentProcessor.new(
+            supportedToken.address,
             merchantId,
             gateway.address,
             wallet.address
@@ -51,6 +56,8 @@ contract('PrivatePaymentProcessor', function (accounts) {
         await token.mint(PROCESSOR, PRICE)
         await token.mint(processor.address, PRICE)
         await token.approve(processor.address, PRICE, { from: PROCESSOR })
+
+        await supportedToken.addToken("abc", token.address,{from: PROCESSOR})
     })
 
     it('should indentify processor address as Monetha address', async () => {
@@ -109,6 +116,19 @@ contract('PrivatePaymentProcessor', function (accounts) {
         await processor.setMonethaGateway(oldGateWayAddress, { from: OWNER })
     })
 
+    it('should not pay for order in tokens if the token is not supported', async () => {
+        await token.mint(ACCEPTOR, PRICE)
+        await token.approve(processor.address, PRICE, { from: ACCEPTOR })
+        FUND_ADDRESS = accounts[3]
+        var FUND_ADDRESS_BALANCE = await token.balanceOf(FUND_ADDRESS)
+        FUND_ADDRESS_BALANCE.toNumber()
+        const monethaFee = FEE
+        var vaultBalance1 = await token.balanceOf(VAULT)
+        vaultBalance1.toNumber()
+        
+        await processor.payForOrderInTokens(ORDER_ID, ORIGIN, monethaFee, CLIENT, PRICE, { from: ACCEPTOR }).should.be.rejectedWith(Revert);
+        
+    })
 
     it('should pay for order correctly in tokens', async () => {
         await token.mint(ACCEPTOR, PRICE)
@@ -215,6 +235,7 @@ contract('PrivatePaymentProcessor', function (accounts) {
         wallet = await MerchantWallet.new(MERCHANT, merchantId, FUND_ADDRESS)
 
         processor = await PrivatePaymentProcessor.new(
+            supportedToken.address,
             merchantId,
             gateway.address,
             wallet.address

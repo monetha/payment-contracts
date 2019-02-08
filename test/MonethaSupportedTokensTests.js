@@ -120,5 +120,36 @@ contract("MonethaSupportedTokens", function (accounts) {
 
   });
 
+  describe("isTokenValid", function () {
+    it("should return if token is supported or not", async function () {
+
+      const tx = await monethaSupportedToken.addToken(
+        token_acronym,
+        token_address,
+        {
+          from: accounts[0]
+        }
+      ).should.be.fulfilled;
+
+      const tx1 = await monethaSupportedToken.isTokenValid(
+          token_address,
+          {
+            from: accounts[0]
+          }
+        ).should.be.fulfilled;
   
+      tx1.should.be.equal(true);
+
+      const tx2 = await monethaSupportedToken.isTokenValid(
+        token_address2,
+        {
+          from: accounts[0]
+        }
+      ).should.be.fulfilled;
+
+      tx2.should.be.equal(false);
+    });
+
+  });
+
 });

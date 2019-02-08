@@ -1,6 +1,6 @@
 import Revert from "./helpers/VMExceptionRevert";
 const {BigNumber} = require('./helpers/setup');
-const PaymentProcessor = artifacts.require("PaymentProcessor")
+const PaymentProcessor = artifacts.require("DecentralisedPaymentProcessor")
 const MerchantDealsHistory = artifacts.require("MerchantDealsHistory")
 const MonethaGateway = artifacts.require("MonethaGateway")
 const MerchantWallet = artifacts.require("MerchantWallet")
@@ -8,7 +8,7 @@ const Token = artifacts.require("ERC20Mintable")
 const MonethaSupportedTokens = artifacts.require("MonethaSupportedTokens");
 let merchantId;
 
-contract('PaymentProcessor', function (accounts) {
+contract('DecentralisedPaymentProcessor', function (accounts) {
 
     const State = {
         Null: 0,
@@ -48,7 +48,6 @@ contract('PaymentProcessor', function (accounts) {
         history = await MerchantDealsHistory.new("merchantId")
         supportedToken = await MonethaSupportedTokens.new()
         await supportedToken.setMonethaAddress(ADMIN, true)
-        
 
         processor = await PaymentProcessor.new(
             supportedToken.address,
@@ -77,7 +76,7 @@ contract('PaymentProcessor', function (accounts) {
 
 
     it('should accept secure token payment correctly', async () => {
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, token.address, VOUCHERS_APPLY, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, token.address, VOUCHERS_APPLY, { from: PROCESSOR })
         var order = await processor.orders(ORDER_ID)
         await processor.secureTokenPay(ORDER_ID, { from: ACCEPTOR })
         
@@ -137,7 +136,7 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it('should add order correctly', async () => {
-        await processor.addOrder(ORDER_ID2, PRICE, ACCEPTOR, ORIGIN, FEE, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID2, PRICE, ACCEPTOR, ORIGIN, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID2)
         new BigNumber(order[0]).should.bignumber.equal(State.Created)
@@ -147,11 +146,11 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it("should not add order if the token is not supported", async function () {
-        await processor.addOrder(ORDER_ID2, PRICE, ACCEPTOR, ORIGIN, FEE, CLIENT, VOUCHERS_APPLY, { from: PROCESSOR }).should.be.rejectedWith(Revert);
+        await processor.addOrder(ORDER_ID2, PRICE, ACCEPTOR, ORIGIN, CLIENT, VOUCHERS_APPLY, { from: PROCESSOR }).should.be.rejectedWith(Revert);
     });
 
     it('should not accept secure payment if token address is present', async () => {
-        await processor.addOrder(ORDER_ID3, PRICE, ACCEPTOR, ORIGIN, FEE, token.address, VOUCHERS_APPLY, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID3, PRICE, ACCEPTOR, ORIGIN, token.address, VOUCHERS_APPLY, { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID3)
         await processor.securePay(ORDER_ID3, { from: ACCEPTOR, value: PRICE }).should.be.rejectedWith(Revert);
@@ -293,7 +292,7 @@ contract('PaymentProcessor', function (accounts) {
         
         await processor.pause({ from: OWNER })
 
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR }).should.be.rejected
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR }).should.be.rejected
     })
 
     async function checkState(processor, orderID, expected) {
@@ -334,7 +333,7 @@ contract('PaymentProcessor', function (accounts) {
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
         await supportedToken.addToken("abc", token.address,{from: ADMIN})
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, TOKEN_ADDRESS, VOUCHERS_APPLY, { from: PROCESSOR })
 
         return { processor, wallet }
     }

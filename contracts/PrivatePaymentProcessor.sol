@@ -8,6 +8,7 @@ import "monetha-utility-contracts/contracts/Restricted.sol";
 import "./MonethaGateway.sol";
 import "./MerchantWallet.sol";
 import "./GenericERC20.sol";
+import "./MonethaSupportedTokens.sol";
 
 contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restricted {
 
@@ -60,6 +61,9 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         uint amount
     );
 
+    /// MonethaSupportedTokens contract for validating tokens
+    MonethaSupportedTokens public supportedTokens;
+
     /// MonethaGateway contract for payment processing
     MonethaGateway public monethaGateway;
 
@@ -87,6 +91,7 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
      *  @param _merchantWallet Address of MerchantWallet, where merchant reputation and funds are stored
      */
     constructor(
+        address _tokenAddr,
         string _merchantId,
         MonethaGateway _monethaGateway,
         MerchantWallet _merchantWallet
@@ -97,6 +102,7 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
 
         merchantIdHash = keccak256(abi.encodePacked(_merchantId));
 
+        supportedTokens = MonethaSupportedTokens(_tokenAddr);
         setMonethaGateway(_monethaGateway);
         setMerchantWallet(_merchantWallet);
     }
@@ -165,7 +171,8 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         require(_originAddress != 0x0);
         require(_orderValue > 0);
         require(_tokenAddress != address(0));
-
+        require(supportedTokens.isTokenValid(_tokenAddress) == true, "token not supported");
+        
         address fundAddress;
         fundAddress = merchantWallet.merchantFundAddress();
 

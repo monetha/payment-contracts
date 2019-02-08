@@ -13,8 +13,8 @@ import "./MonethaSupportedTokens.sol";
 
 
 /**
- *  @title PaymentProcessor
- *  Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
+ *  @title DecentralisedPaymentProcessor
+ *  Each Merchant has one DecentralisedPaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
  *  Payment Processor State Transitions:
  *  Null -(addOrder) -> Created
@@ -26,7 +26,7 @@ import "./MonethaSupportedTokens.sol";
  */
 
 
-contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
+contract DecentralisedPaymentProcessor is Pausable, Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
 
@@ -129,22 +129,18 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _price Price of the order 
      *  @param _paymentAcceptor order payment acceptor
      *  @param _originAddress buyer address
-     *  @param _fee Monetha fee
      */
     function addOrder(
         uint _orderId,
         uint _price,
         address _paymentAcceptor,
         address _originAddress,
-        uint _fee,
         address _tokenAddress,
         uint _vouchersApply
     ) external whenNotPaused atState(_orderId, State.Null)
     {
         require(_orderId > 0);
         require(_price > 0);
-        require(_fee >= 0 && _fee <= FEE_PERMILLE.mul(_price).div(PERMILLE_COEFFICIENT));
-        // Monetha fee cannot be greater than 1.5% of price
         require(_paymentAcceptor != address(0));
         require(_originAddress != address(0));
         require(orders[_orderId].price == 0 && orders[_orderId].fee == 0);
@@ -152,6 +148,9 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
             require(supportedTokens.isTokenValid(_tokenAddress) == true, "token not supported");
         }
         
+        // Monetha fee will always be 1.5% of price
+        uint _fee = FEE_PERMILLE.mul(_price).div(PERMILLE_COEFFICIENT);
+
         orders[_orderId] = Order({
             state : State.Created,
             price : _price,

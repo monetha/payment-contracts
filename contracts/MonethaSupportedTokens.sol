@@ -17,6 +17,7 @@ contract MonethaSupportedTokens is Restricted {
     }
     
     mapping (uint => Token) public tokens;
+    mapping (address => bool) public validToken;
 
     uint public tokenId;
     
@@ -34,12 +35,15 @@ contract MonethaSupportedTokens is Restricted {
         });
         allAddresses.push(_tokenAddress);
         allAccronym.push(bytes32(_tokenAcronym));
+        validToken[_tokenAddress] = true;
     }
     
     function deleteToken(uint _tokenId)
         external onlyMonetha
     {
-        
+        address _tokenAddress = tokens[_tokenId].token_address;
+        validToken[_tokenAddress] = false;
+
         tokens[_tokenId].token_address = tokens[tokenId].token_address;
         tokens[_tokenId].token_acronym = tokens[tokenId].token_acronym;
 
@@ -52,9 +56,11 @@ contract MonethaSupportedTokens is Restricted {
         tokenId--;
     }
     
-    function getAll() external view returns (address[], bytes32[])
-    {
+    function getAll() external view returns (address[], bytes32[]) {
         return (allAddresses, allAccronym);
     }
     
+    function isTokenValid(address _tokenAddr) external view returns (bool) {
+        return validToken[_tokenAddr];
+    }
 }
