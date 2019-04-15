@@ -8,6 +8,12 @@ cache:
   directories:
     - node_modules
 
+env:
+  global:
+    - ARTIFACTS_DIR=artifacts
+    - ARTIFACT_NAME=payment-contracts
+    - ARTIFACT_EXT=zip
+
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y jq
@@ -22,18 +28,33 @@ script:
 after_success:
   - for file in build/contracts/*.json; do jq '.abi' < "$file" > "${file%.json}.abi"; done
   - for file in build/contracts/*.json; do jq -r '.bytecode' < "$file" > "${file%.json}.bin"; done
-  - mkdir artifacts && for solfile in contracts/*.sol; do ./node_modules/.bin/truffle-flattener $solfile > artifacts/${solfile##*/}; done
-  - for file in contracts/*.sol; do f=$(basename -- ${file%.*}); cp "build/contracts/${f}.abi" artifacts/; cp "build/contracts/${f}.bin" artifacts/; done
-  - 'echo "Compiler: $(./node_modules/.bin/solcjs --version)" > artifacts/README.md'
-  - 'echo "Contracts commit: ${CI_COMMIT_SHA}" >> artifacts/README.md'
-  - pushd artifacts; zip -r payment-contracts.zip .; popd
-  - 'echo "Artifacts download URL: https://${ARTIFACTS_BUCKET}.s3.amazonaws.com/${TRAVIS_REPO_SLUG}/${TRAVIS_COMMIT}/payment-contracts.zip"'
+  - mkdir ${ARTIFACTS_DIR} && for solfile in contracts/*.sol; do ./node_modules/.bin/truffle-flattener $solfile > ${ARTIFACTS_DIR}/${solfile##*/}; done
+  - for file in contracts/*.sol; do f=$(basename -- ${file%.*}); cp "build/contracts/${f}.abi" ${ARTIFACTS_DIR}/; cp "build/contracts/${f}.bin" ${ARTIFACTS_DIR}/; done
+  - 'echo "Compiler: $(./node_modules/.bin/solcjs --version)" > ${ARTIFACTS_DIR}/README.md'
+  - 'echo "Contracts commit: ${TRAVIS_COMMIT}" >> ${ARTIFACTS_DIR}/README.md'
+  - pushd ${ARTIFACTS_DIR}; zip -r ${ARTIFACT_NAME}.${ARTIFACT_EXT} .; popd
+  - 'echo "Artifacts download URL: https://${ARTIFACTS_BUCKET}.s3.amazonaws.com/${TRAVIS_REPO_SLUG}/${TRAVIS_COMMIT}/${ARTIFACT_NAME}.${ARTIFACT_EXT}"'
 
 addons:
   artifacts:
-    s3_region: "eu-west-1"
-    working_dir: artifacts
+    s3_region: ${ARTIFACTS_S3_REGION}
+    working_dir: ${ARTIFACTS_DIR}
     paths:
-      - payment-contracts.zip
+      - ${ARTIFACT_NAME}.${ARTIFACT_EXT}
     target_paths:
-      - /$TRAVIS_REPO_SLUG/$TRAVIS_COMMIT
+      - /${TRAVIS_REPO_SLUG}/${TRAVIS_COMMIT}
+
+before_deploy:
+  - cp ${ARTIFACTS_DIR}/${ARTIFACT_NAME}.${ARTIFACT_EXT} ${ARTIFACTS_DIR}/${ARTIFACT_NAME}-${TRAVIS_TAG}.${ARTIFACT_EXT}
+
+deploy:
+  provider: releases
+  api_key:
+    secure: YAiEzaknN1g+Bl91gJvxq66M7rCv5Mdd6X+5jYEfSOiRTuolt3Bi6OXf1uzk/IUR27Lplfc1eKNLsEQbcQ0/qwm6x7aUn4k97dud36ikBqv5xYuyHl/DH9l0mpJBjulGvTAW96iJ/Daffd3um3F5v6k4XqclZZ/MBEl1L7kPYSDPmnxLu75QUB3cpvkNc1WmaU3UoUzuZ1Wypqr9orAMrfzlp48rJUO7RcuDya208qnm6UK72c89rgP3reCY17+xMP9xPsySMZ/wMAI+bSwxV9qPmZ+nVDKjZgl4lIcWlWNl/nmI/JZZuY+9c8nvxnKLdOCrFmHAc+6FQnEVnFgc7yoXGD1kPnHJA27RYWvd4bGhITvlXvG9QreZPCrqmeK0wQsK8kYYj7hCp+DhA/+HdovltKrBYNcNgNrH5k0bPHKwYu1nnrxGSOsVqwwJAktn/ovZ8OMlQjI6LVdxYfRmjUyhjKswcoL12RzPcZxnBvQw9MdczpmXN35M+w1Z75YDJw/cB32mGSTCgkLJfwGokdlvgeUIZeOpfUQOgljlbKChe+k9qcwYKuLQIWGlC1HG0qjvbavX9AzBxK7myV5fzoBA30dX/BWfh69bEzf4o3FdMV0IF0/IBr9d42woFIPbl2cjoJtFJuatQxY216lX2r5hXTAZqgmGMwUUoHqrBm0=
+  file: ${ARTIFACTS_DIR}/${ARTIFACT_NAME}-${TRAVIS_TAG}.${ARTIFACT_EXT}
+  skip_cleanup: true
+  overwrite: true
+  draft: true
+  on:
+    repo: ${TRAVIS_REPO_SLUG}
+    tags: true
